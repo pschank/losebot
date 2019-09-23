@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+#!/usr/bin/env python
 
 import datetime
 import sys
@@ -7,8 +7,11 @@ import os
 import getpass
 import ConfigParser
 
-# compute time range for weekly food log files that we want to download.
-# we go BACKWARDS in time from "now".
+# Program for downloading and parsing log data from the Loseit.com web site.
+
+
+# Compute time range for weekly food log files that we want to download.
+# We go BACKWARDS in time from "now".
 # Start is a Monday 8am for most recent week with FULL data--in other words, skip this current week.
 # Endpoint is where we left off last time -- initially  May 10, 2010 (start of all data)
 EXPORT_WEEKLY_DATA_URL = "https://loseit.com/export/weekly?date=%s"
@@ -17,10 +20,7 @@ WEEK_SECS = 604800  # 1 week in seconds
 DOWNLOAD_DIR = os.path.dirname(os.path.abspath(__file__)) + "/downloaded_loseit_food_exercise/"
 LOSE_IT_CREATION_DATE = datetime.datetime.strptime("2008-01-01", '%Y-%m-%d')
 
-# todo check in to github
-# todo rationalize file names and 'make' targets or whatever?
 # todo another app: load into mysql for analysis?
-
 
 def main():
     start_date = ""
@@ -37,15 +37,15 @@ def main():
         config = ConfigParser.RawConfigParser()
         config.read(sys.argv[1])
         try:
-            user = config.get('Loseit', 'username')
-            password = config.get('Loseit', 'password')
-            start_date = config.get('Loseit', 'startdate')
+            user = config.get('Losebot', 'username')
+            password = config.get('Losebot', 'password')
+            start_date = config.get('Losebot', 'startdate')
         except Exception:
             print("""
 Expected file to have a header and 3 required entries like:
 
-[Loseit]
-username=someemail@someserver.com
+[Losebot]
+username=myemail@someserver.com
 password=mysecretpassword
 startdate=2018-05-01
 """)

@@ -1,0 +1,5 @@
+*.iml
+losebot.properties
+downloaded_loseit_food_exercise/
+.DS_Store
+.idea/
