@@ -20,10 +20,11 @@ WEEK_SECS = 604800  # 1 week in seconds
 DOWNLOAD_DIR = os.path.dirname(os.path.abspath(__file__)) + "/downloaded_loseit_food_exercise/"
 LOSE_IT_CREATION_DATE = datetime.datetime.strptime("2008-01-01", '%Y-%m-%d')
 
+# todo format changed in download file (added Icon field). Redo old downloads.
 # todo another app: load into mysql for analysis?
 
 def main():
-    start_date = ""
+    start_date_from_properties = ""
     user = ""
     password = ""
     br = mechanize.Browser()
@@ -39,15 +40,18 @@ def main():
         try:
             user = config.get('Losebot', 'username')
             password = config.get('Losebot', 'password')
-            start_date = config.get('Losebot', 'startdate')
+            try:
+                start_date_from_properties = config.get('Losebot', 'startdate')
+            except Exception:
+                pass # ok not to have startdate
+
         except Exception:
             print("""
-Expected file to have a header and 3 required entries like:
+Expected file to have a header and 2 required entries like:
 
 [Losebot]
 username=myemail@someserver.com
 password=mysecretpassword
-startdate=2018-05-01
 """)
             sys.exit(1)
 
@@ -62,20 +66,26 @@ startdate=2018-05-01
 
     # first case: check download dir to see what we have already, if any
     last_downloaded_timestamp = get_most_recently_download_timestamp()
+    # print("last downloaded")
+    # print(last_downloaded_timestamp)
     if last_downloaded_timestamp == 0:
         # user's first time; use start date from file or prompt for start date
-        if start_date is "":
+        if start_date_from_properties is "":
             start_date_timestamp = prompt_start_date()
         else:
-            start_date_timestamp = convert_datetime_to_timestamp(start_date)
+            start_date_timestamp = convert_datetime_to_timestamp(start_date_from_properties)
+            # print("start date converted")
+            # print(start_date_timestamp)
 
     else:
-        # if start_date and last_downloaded are both specified
+        # if start_date_from_properties and last_downloaded are both specified
         # warn & use last download
-        if start_date is not "":
+        if start_date_from_properties is not "":
             print("Overriding specified start date because we found previous downloads; updating from there.")
         start_date_timestamp = last_downloaded_timestamp
 
+    # print("start date for download")
+    # print(start_date_timestamp)
     download_weekly_food_log_files(br, start_date_timestamp)
 
 
@@ -107,14 +117,21 @@ def pretty_date(secs_since_epoch):
 
 def content_is_ok(filename):
     with open(filename) as f:
-        return "Date,Name,Type,Quantity,Units,Calories,Fat" in f.readline()
+        return "Date,Name,Icon,Type,Quantity,Units,Calories,Deleted,Fat" in f.readline()
 
 
 def download_weekly_food_log_files(br, start_date_timestamp):
-    weekly_timestamp = get_starting_week_timestamp()
+    weekly_timestamp = get_recent_week_timestamp()
+    print("weekly timestamp")
+    print(weekly_timestamp)
     if weekly_timestamp <= start_date_timestamp:
         print("nothing to download: up to date")
         sys.exit(0)
+
+    # if start_date_timestamp < LOSE_IT_CREATION_DATE:
+    #     raise Exception("bug in start date")
+
+    # sys.exit(0) # todo debugging
 
     # iterate backwards from last week until we hit the start_date
     while weekly_timestamp > start_date_timestamp:
@@ -137,7 +154,7 @@ def is_logged_in(br):
     return "Sign In" not in page_contents
 
 
-def get_starting_week_timestamp():
+def get_recent_week_timestamp():
     # start point is the Monday a week-plus ago, at 8am GMT -- to get full week of data
     today = datetime.datetime.now()
 
