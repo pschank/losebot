@@ -20,9 +20,6 @@ WEEK_SECS = 604800  # 1 week in seconds
 DOWNLOAD_DIR = os.path.dirname(os.path.abspath(__file__)) + "/downloaded_loseit_food_exercise/"
 LOSE_IT_CREATION_DATE = datetime.datetime.strptime("2008-01-01", '%Y-%m-%d')
 
-# todo format changed in download file (added Icon field). Redo old downloads.
-# todo another app: load into mysql for analysis?
-
 def main():
     start_date_from_properties = ""
     user = ""
