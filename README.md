@@ -19,7 +19,13 @@ only newer data.
 
 The program requires python, which is built into Macos, and available on Windows.
 
-_python losebot.py_
+It also requires the [mechanize module](https://pypi.org/project/mechanize/) to support stateful web browsing, which allows losebot to log into your loseit account. The command to install mechanize is
+
+`pip install mechanize`
+
+The command to run losebot is:
+
+`python losebot.py`
 
 The program will prompt you for your username, password, and the date to start downloading from. 
 (The default start date is set to one year ago.) Once you've downloaded some data, the next time
