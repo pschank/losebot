@@ -19,7 +19,7 @@ only newer data.
 
 The program requires python, which is built into Macos, and available on Windows.
 
-It also requires the [mechanize module](https://pypi.org/project/mechanize/) to support stateful web browsing, which allows losebot to log into your loseit account. The command to install mechanize is
+It also requires the [mechanize module](https://pypi.org/project/mechanize/) to support stateful web browsing, which allows losebot to log into your loseit account. The command to install mechanize is:
 
 `pip install mechanize`
 
