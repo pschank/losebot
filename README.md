@@ -45,4 +45,4 @@ password=mysecretpassword
 
 and to use a properties file, invoke losebot supplying the path to your properties file as the first argument, like so: 
 
-_python losebot.py \<my properties file\>_
+`python losebot.py <my properties file>`
