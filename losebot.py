@@ -5,7 +5,7 @@ import sys
 import mechanize
 import os
 import getpass
-import ConfigParser
+import configparser
 
 # Program for downloading and parsing log data from the Loseit.com web site.
 
@@ -32,7 +32,7 @@ def main():
         if not os.path.exists(sys.argv[1]):
             print("cannot find file: %s" % sys.argv[1])
             sys.exit(1)
-        config = ConfigParser.RawConfigParser()
+        config = configparser.RawConfigParser()
         config.read(sys.argv[1])
         try:
             user = config.get('Losebot', 'username')
@@ -93,7 +93,7 @@ def convert_datetime_to_timestamp(year_month_day_string):
 
 
 def prompt_login():
-    user = raw_input("Username: ")
+    user = input("Username: ")
     password = getpass.getpass("Password: ")
     return password, user
 
@@ -148,7 +148,7 @@ def is_logged_in(br):
     # a redirect to a page with a login means that you have NOT successfully logged in.
     # a page with a login has "Sign In" in text.
     page_contents = br.response().read()
-    return "Sign In" not in page_contents
+    return "Sign In" not in str(page_contents)
 
 
 def get_recent_week_timestamp():
@@ -183,7 +183,7 @@ def get_start_date(br):
 def prompt_start_date():
     one_year_ago = datetime.datetime.now() - datetime.timedelta(days=365)
     pretty_one_year_ago = pretty_date(float(one_year_ago.strftime("%s")))
-    start_str = raw_input(
+    start_str = input(
         "Start date, in format YYYY-MM-DD, defaults to %s: " % pretty_one_year_ago) or pretty_one_year_ago
     # if start date is prior to when LoseIt began, use LoseIt creation date Jan 2008
     print("start date is: %s" % start_str)

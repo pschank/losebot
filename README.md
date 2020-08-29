@@ -1,7 +1,7 @@
 # Losebot
 ## A means to download food & exercise logs from loseit.com 
 
-The Loseit app and website provide a way to track what you eat each day, and any exercise.
+The Loseit® app and website provide a way to track what you eat each day, and any exercise.
 
 On the loseit.com website, you can log in and browse your entries by day or week. 
 You can also export log data for a single week under _Insights > Weekly Summary > Export to spreadsheet_
