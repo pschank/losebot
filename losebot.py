@@ -62,7 +62,7 @@ password=mysecretpassword
         sys.exit(1)
 
     # first case: check download dir to see what we have already, if any
-    last_downloaded_timestamp = get_most_recently_download_timestamp()
+    last_downloaded_timestamp = get_startdate_from_downloads()
     # print("last downloaded")
     # print(last_downloaded_timestamp)
     if last_downloaded_timestamp == 0:
@@ -70,8 +70,13 @@ password=mysecretpassword
         if start_date_from_properties is "":
             start_date_timestamp = prompt_start_date()
         else:
-            start_date_timestamp = convert_datetime_to_timestamp(start_date_from_properties)
-            # print("start date converted")
+            start_date_timestamp = convert_nearest_monday_to_timestamp(start_date_from_properties)
+
+            if start_date_timestamp < float(LOSE_IT_CREATION_DATE.strftime("%s")):
+                raise Exception(
+                    "start date in properties cannot be before {0}".format(LOSE_IT_CREATION_DATE.strftime('%Y-%m-%d')))
+
+    # print("start date converted")
             # print(start_date_timestamp)
 
     else:
@@ -86,9 +91,10 @@ password=mysecretpassword
     download_weekly_food_log_files(br, start_date_timestamp)
 
 
-def convert_datetime_to_timestamp(year_month_day_string):
+def convert_nearest_monday_to_timestamp(year_month_day_string):
     start_date_parsed = datetime.datetime.strptime(year_month_day_string, '%Y-%m-%d')
-    start_date_timestamp = float(start_date_parsed.strftime("%s"))
+    start_date = get_previous_monday(start_date_parsed)
+    start_date_timestamp = float(start_date.strftime("%s"))
     return start_date_timestamp
 
 
@@ -118,20 +124,17 @@ def content_is_ok(filename):
 
 
 def download_weekly_food_log_files(br, start_date_timestamp):
-    weekly_timestamp = get_recent_week_timestamp()
-    print("weekly timestamp")
-    print(weekly_timestamp)
-    if weekly_timestamp <= start_date_timestamp:
+    end_date_timestamp = get_last_monday_timestamp(datetime.datetime.now())
+    print("start date timestamp")
+    print(start_date_timestamp)
+    if end_date_timestamp <= start_date_timestamp:
         print("nothing to download: up to date")
         sys.exit(0)
 
-    # if start_date_timestamp < LOSE_IT_CREATION_DATE:
-    #     raise Exception("bug in start date")
-
     # sys.exit(0) # todo debugging
 
-    # iterate backwards from last week until we hit the start_date
-    while weekly_timestamp > start_date_timestamp:
+    weekly_timestamp = start_date_timestamp
+    while weekly_timestamp <= end_date_timestamp:
         filename = DOWNLOAD_DIR + "%s_food.csv" % pretty_date(weekly_timestamp)
         url_timestamp_millis = int(round(weekly_timestamp * 1000))
         br.retrieve(EXPORT_WEEKLY_DATA_URL % url_timestamp_millis, filename)
@@ -141,7 +144,7 @@ def download_weekly_food_log_files(br, start_date_timestamp):
             sys.exit(1)
         else:
             print("saved file: %s" % filename)
-            weekly_timestamp -= WEEK_SECS
+            weekly_timestamp += WEEK_SECS
 
 
 def is_logged_in(br):
@@ -151,17 +154,20 @@ def is_logged_in(br):
     return "Sign In" not in str(page_contents)
 
 
-def get_recent_week_timestamp():
-    # start point is the Monday a week-plus ago, at 8am GMT -- to get full week of data
-    today = datetime.datetime.now()
-
-    # Go back to Monday before last Monday by subtracting off the days of this week plus another week
-    last_monday = today + datetime.timedelta(days=-today.weekday() - 7)
-    last_monday = last_monday.replace(hour=8, minute=0, second=0)
+def get_last_monday_timestamp(timestamp):
+    # For logs, want a full week of data ending on Mondays
+    last_monday = get_previous_monday(timestamp)
     return float(last_monday.strftime("%s"))
 
 
-def get_most_recently_download_timestamp():
+def get_previous_monday(my_datetime):
+    # Get last Monday by subtracting off the days of this week, at 8 am GMT
+    last_monday = my_datetime + datetime.timedelta(days=-my_datetime.weekday())
+    last_monday = last_monday.replace(hour=8, minute=0, second=0)   # start at 8am
+    return last_monday
+
+
+def get_startdate_from_downloads():
     if not os.path.exists(DOWNLOAD_DIR):
         os.makedirs(DOWNLOAD_DIR)
     all_files = os.listdir(DOWNLOAD_DIR)
@@ -170,6 +176,8 @@ def get_most_recently_download_timestamp():
     in_order = sorted(all_files)
     most_recent_file = in_order[-1]
     most_recent_date = datetime.datetime.strptime(most_recent_file, '%Y-%m-%d_food.csv')
+    # start from one week after previous download, and make sure it is a Monday
+    most_recent_date = most_recent_date + datetime.timedelta(days=-most_recent_date.weekday()+7)
     most_recent_date = most_recent_date.replace(hour=8, minute=0, second=0)
     return float(most_recent_date.strftime("%s"))
 
