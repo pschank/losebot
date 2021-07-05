@@ -127,7 +127,8 @@ def download_weekly_food_log_files(br, start_date_timestamp):
     end_date_timestamp = get_last_monday_timestamp(datetime.datetime.now())
     print("start date timestamp")
     print(start_date_timestamp)
-    if end_date_timestamp <= start_date_timestamp:
+    # Prevent illogical situation where start is after the end
+    if end_date_timestamp < start_date_timestamp:
         print("nothing to download: up to date")
         sys.exit(0)
 
@@ -176,8 +177,8 @@ def get_startdate_from_downloads():
     in_order = sorted(all_files)
     most_recent_file = in_order[-1]
     most_recent_date = datetime.datetime.strptime(most_recent_file, '%Y-%m-%d_food.csv')
-    # start from one week after previous download, and make sure it is a Monday
-    most_recent_date = most_recent_date + datetime.timedelta(days=-most_recent_date.weekday()+7)
+    # Rewrite the last file because it could be incomplete, set to 8 am because midnight
+    # could be confusing as to whether it belongs to current or previous day
     most_recent_date = most_recent_date.replace(hour=8, minute=0, second=0)
     return float(most_recent_date.strftime("%s"))
 
