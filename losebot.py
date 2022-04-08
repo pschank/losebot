@@ -67,7 +67,7 @@ password=mysecretpassword
     # print(last_downloaded_timestamp)
     if last_downloaded_timestamp == 0:
         # user's first time; use start date from file or prompt for start date
-        if start_date_from_properties is "":
+        if start_date_from_properties == "":
             start_date_timestamp = prompt_start_date()
         else:
             start_date_timestamp = convert_nearest_monday_to_timestamp(start_date_from_properties)
@@ -82,7 +82,7 @@ password=mysecretpassword
     else:
         # if start_date_from_properties and last_downloaded are both specified
         # warn & use last download
-        if start_date_from_properties is not "":
+        if start_date_from_properties != "":
             print("Overriding specified start date because we found previous downloads; updating from there.")
         start_date_timestamp = last_downloaded_timestamp
 
