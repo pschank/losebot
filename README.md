@@ -17,11 +17,11 @@ only newer data.
 
 ## How to run the program
 
-The program requires python, which is built into Macos, and available on Windows.
+The program requires python version 3+, which on a mac you can install with `brew install python3` (assuming `homebrew` already installed). For a more automated approach, use `direnv`, for which a dotfile already exists.
 
 It also requires the [mechanize module](https://pypi.org/project/mechanize/) to support stateful web browsing, which allows losebot to log into your loseit account. The command to install mechanize is:
 
-`pip install mechanize`
+`python setup.py install` or manually via `pip install mechanize`
 
 The command to run losebot is:
 
