@@ -1,11 +1,19 @@
 #!/usr/bin/env python
 
-import datetime
-import sys
-import mechanize
-import os
-import getpass
 import configparser
+import datetime
+import getpass
+import os
+from pydoc import classname
+import shutil
+import sys
+import time
+
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from webdriver_setup import get_webdriver_for
 
 # Program for downloading and parsing log data from the Loseit.com web site.
 
@@ -20,14 +28,22 @@ WEEK_SECS = 604800  # 1 week in seconds
 DOWNLOAD_DIR = os.path.dirname(os.path.abspath(__file__)) + "/downloaded_loseit_food_exercise/"
 LOSE_IT_CREATION_DATE = datetime.datetime.strptime("2008-01-01", '%Y-%m-%d')
 
+USER_AGENT= 'Mozilla/5.0 (Macintosh; Intel Mac OS X 12_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36'
+TMP_DOWNLOAD_FOLDER = "/tmp/loseit_downloads"
+
 def main():
     start_date_from_properties = ""
     user = ""
     password = ""
-    br = mechanize.Browser()
-    br.set_handle_robots(False)
-    br.addheaders = [
-        ('User-agent', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:57.0) Gecko/20100101 Firefox/57.0')]
+
+    options = webdriver.ChromeOptions()
+
+    options.add_argument('headless')
+    options.add_argument(f'user-agent={USER_AGENT}')
+    prefs = {"download.default_directory": TMP_DOWNLOAD_FOLDER}
+    options.add_experimental_option("prefs", prefs);
+    # options.add_argument(f"download.default_directory={DOWNLOAD_FOLDER}")
+    browser = get_webdriver_for("chrome", options=options)
     if len(sys.argv) > 1:
         if not os.path.exists(sys.argv[1]):
             print("cannot find file: %s" % sys.argv[1])
@@ -55,9 +71,16 @@ password=mysecretpassword
     if user == "" or password == "":
         password, user = prompt_login()
 
-    login(br, "https://loseit.com/account/", user, password)
+    if not os.path.exists(TMP_DOWNLOAD_FOLDER):
+        os.mkdir(TMP_DOWNLOAD_FOLDER)
+    else:
+        files = os.listdir(TMP_DOWNLOAD_FOLDER)
+        for f in files:
+            os.remove(os.path.join(TMP_DOWNLOAD_FOLDER, f))
 
-    if not is_logged_in(br):
+    login(browser, "https://my.loseit.com/login/?r=https%3A%2F%2Floseit.com", user, password)
+
+    if not is_logged_in(browser):
         print("login unsuccessful")
         sys.exit(1)
 
@@ -88,7 +111,7 @@ password=mysecretpassword
 
     # print("start date for download")
     # print(start_date_timestamp)
-    download_weekly_food_log_files(br, start_date_timestamp)
+    download_weekly_food_log_files(browser, start_date_timestamp)
 
 
 def convert_nearest_monday_to_timestamp(year_month_day_string):
@@ -104,14 +127,15 @@ def prompt_login():
     return password, user
 
 
-def login(br, url, user, password):
+def login(browser, url, user, password):
     print("attempting to log in...")
-    br.open(url)
-    br.select_form(id="loginForm")
-    br.form["username"] = user
-    br.form["password"] = password
-    br.submit()
-
+    browser.get(url)
+    email = browser.find_element(By.ID, "email")
+    email.send_keys(user)
+    passwd = browser.find_element(By.ID, "password")
+    passwd.send_keys(password)
+    browser.find_element(By.XPATH, "//button[@type='submit']").click()
+    WebDriverWait(browser, 15).until(EC.url_changes(browser.current_url))
 
 def pretty_date(secs_since_epoch):
     value = datetime.datetime.fromtimestamp(secs_since_epoch)
@@ -123,7 +147,7 @@ def content_is_ok(filename):
         return "Date,Name,Icon,Type,Quantity,Units,Calories,Deleted,Fat" in f.readline()
 
 
-def download_weekly_food_log_files(br, start_date_timestamp):
+def download_weekly_food_log_files(browser, start_date_timestamp):
     end_date_timestamp = get_last_monday_timestamp(datetime.datetime.now())
     print("start date timestamp")
     print(start_date_timestamp)
@@ -138,8 +162,18 @@ def download_weekly_food_log_files(br, start_date_timestamp):
     while weekly_timestamp <= end_date_timestamp:
         filename = DOWNLOAD_DIR + "%s_food.csv" % pretty_date(weekly_timestamp)
         url_timestamp_millis = int(round(weekly_timestamp * 1000))
-        br.retrieve(EXPORT_WEEKLY_DATA_URL % url_timestamp_millis, filename)
+        files = os.listdir(TMP_DOWNLOAD_FOLDER)
+        if files:
+            print("expected empty folder to begin with at: %s" % TMP_DOWNLOAD_FOLDER)
+            sys.exit(1)
+        browser.get(EXPORT_WEEKLY_DATA_URL % url_timestamp_millis)
+        wait4download(TMP_DOWNLOAD_FOLDER, 10, 1)
+
+        files = os.listdir(TMP_DOWNLOAD_FOLDER)
+        shutil.move(os.path.join(TMP_DOWNLOAD_FOLDER, files[0]), filename)
         if not content_is_ok(filename):
+            with open("/tmp/failed_export.html", 'w+') as f:
+                f.write(browser.page_source)
             os.remove(filename)
             print("failed to retrieve " + EXPORT_WEEKLY_DATA_URL % url_timestamp_millis)
             sys.exit(1)
@@ -147,12 +181,44 @@ def download_weekly_food_log_files(br, start_date_timestamp):
             print("saved file: %s" % filename)
             weekly_timestamp += WEEK_SECS
 
+def wait4download(directory, timeout, nfiles=None):
+    """
+    Wait for downloads to finish with a specified timeout.
 
-def is_logged_in(br):
+    Args
+    ----
+    directory : str
+        The path to the folder where the files will be downloaded.
+    timeout : int
+        How many seconds to wait until timing out.
+    nfiles : int, defaults to None
+        If provided, also wait for the expected number of files.
+
+    """
+    seconds = 0
+    dl_wait = True
+    while dl_wait and seconds < timeout:
+        time.sleep(1)
+        dl_wait = False
+        files = os.listdir(directory)
+        if nfiles and len(files) != nfiles:
+            dl_wait = True
+
+        seconds += 1
+    return seconds
+
+def is_logged_in(browser):
     # a redirect to a page with a login means that you have NOT successfully logged in.
     # a page with a login has "Sign In" in text.
-    page_contents = br.response().read()
-    return "Sign In" not in str(page_contents)
+    result = "Log In" not in str(browser.page_source)
+    if not result:
+        with open('/tmp/loseit_login_result.html', 'w+') as f:
+            f.write(browser.page_source)
+    else:
+        with open('/tmp/post_login_result.html', 'w+') as f:
+            f.write(browser.page_source)
+
+    return result
 
 
 def get_last_monday_timestamp(timestamp):

@@ -33,6 +33,6 @@ setup(
 
     packages=find_packages(where='src'),  # Required
 
-    install_requires=['mechanize'],  # Optional
+    install_requires=['selenium', 'webdriver-setup'],
 )
 
