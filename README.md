@@ -19,9 +19,9 @@ only newer data.
 
 The program requires python version 3+, which on a mac you can install with `brew install python3` (assuming `homebrew` already installed). For a more automated approach, use `direnv`, for which a dotfile already exists.
 
-It also requires the [mechanize module](https://pypi.org/project/mechanize/) to support stateful web browsing, which allows losebot to log into your loseit account. The command to install mechanize is:
+It also requires the [selenium](https://pypi.org/project/selenium/) to support stateful web browsing, which allows losebot to log into your loseit account. The command to install selenium is:
 
-`python setup.py install` or manually via `pip install mechanize`
+`python setup.py install` or manually via `pip install selenium`
 
 The command to run losebot is:
 
