@@ -4,3 +4,5 @@ downloaded_loseit_food_exercise/
 .DS_Store
 .idea/
 .venv
+losebot.egg-info/
+dist/
