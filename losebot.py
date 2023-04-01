@@ -36,13 +36,24 @@ def main():
     user = ""
     password = ""
 
-    options = webdriver.ChromeOptions()
+    # download into temporary folder, make sure it's empty
+    if not os.path.exists(TMP_DOWNLOAD_FOLDER):
+        os.mkdir(TMP_DOWNLOAD_FOLDER)
+    else:
+        files = os.listdir(TMP_DOWNLOAD_FOLDER)
+        for f in files:
+            os.remove(os.path.join(TMP_DOWNLOAD_FOLDER, f))
 
-    options.add_argument('headless')
+    options = webdriver.ChromeOptions()
+    options.add_argument("--headless=new")
     options.add_argument(f'user-agent={USER_AGENT}')
-    prefs = {"download.default_directory": TMP_DOWNLOAD_FOLDER}
-    options.add_experimental_option("prefs", prefs);
-    # options.add_argument(f"download.default_directory={DOWNLOAD_FOLDER}")
+    prefs = {}
+    prefs["profile.default_content_settings.popups"]=0
+    prefs["download.default_directory"] = TMP_DOWNLOAD_FOLDER
+    prefs["download.prompt_for_download"] = False
+    prefs["download.directory_upgrade"] = True
+    options.add_experimental_option("prefs", prefs)
+
     browser = get_webdriver_for("chrome", options=options)
     if len(sys.argv) > 1:
         if not os.path.exists(sys.argv[1]):
@@ -70,13 +81,6 @@ password=mysecretpassword
 
     if user == "" or password == "":
         password, user = prompt_login()
-
-    if not os.path.exists(TMP_DOWNLOAD_FOLDER):
-        os.mkdir(TMP_DOWNLOAD_FOLDER)
-    else:
-        files = os.listdir(TMP_DOWNLOAD_FOLDER)
-        for f in files:
-            os.remove(os.path.join(TMP_DOWNLOAD_FOLDER, f))
 
     login(browser, "https://my.loseit.com/login/?r=https%3A%2F%2Floseit.com", user, password)
 
@@ -166,6 +170,7 @@ def download_weekly_food_log_files(browser, start_date_timestamp):
         if files:
             print("expected empty folder to begin with at: %s" % TMP_DOWNLOAD_FOLDER)
             sys.exit(1)
+
         browser.get(EXPORT_WEEKLY_DATA_URL % url_timestamp_millis)
         wait4download(TMP_DOWNLOAD_FOLDER, 10, 1)
 
