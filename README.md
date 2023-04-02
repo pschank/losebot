@@ -46,3 +46,16 @@ password=mysecretpassword
 and to use a properties file, invoke losebot supplying the path to your properties file as the first argument, like so: 
 
 `python losebot.py <my properties file>`
+
+## Debugging problems
+
+### When chrome changes
+
+The chrome webdriver will update automatically, and its options and behavior change over time. For example, the option for "--headless" changed to "--headless=new"
+### When loseit changes their web site
+
+Log into losit.com, navigate to insights -> weekly summary
+
+Use the browser's developer mode to see the javascript files that are downloaded by the browser. 
+
+Search in each for "export".
