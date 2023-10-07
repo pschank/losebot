@@ -13,7 +13,6 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from webdriver_setup import get_webdriver_for
 
 # Program for downloading and parsing log data from the Loseit.com web site.
 
@@ -54,7 +53,8 @@ def main():
     prefs["download.directory_upgrade"] = True
     options.add_experimental_option("prefs", prefs)
 
-    browser = get_webdriver_for("chrome", options=options)
+    browser = webdriver.Chrome(options=options)
+
     if len(sys.argv) > 1:
         if not os.path.exists(sys.argv[1]):
             print("cannot find file: %s" % sys.argv[1])

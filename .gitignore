@@ -6,3 +6,4 @@ downloaded_loseit_food_exercise/
 .venv
 losebot.egg-info/
 dist/
+build/
