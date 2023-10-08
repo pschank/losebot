@@ -21,13 +21,15 @@ The program requires python version 3+, which on a mac you can install with `bre
 
 It also requires the [selenium](https://pypi.org/project/selenium/) to support stateful web browsing, which allows losebot to log into your loseit account. The command to install  dependencies is:
 
-`pip install --target build --upgrade .`
+`python -m pip install  .`
 
 The command to run losebot is:
 
 `python losebot.py`
 
-The program will prompt you for your username, password, and the date to start downloading from. 
+On macos, running this may produce a repeated warning that the Chrome was downloaded and is therefore untrusted (hit 'cancel' to continue running). 
+
+The `losebot.py` program will prompt you for your username, password, and the date to start downloading from. 
 (The default start date is set to one year ago.) Once you've downloaded some data, the next time
 you run it, losebot won't prompt you for a date because it knows where it left off.
 
