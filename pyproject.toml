@@ -1,7 +1,7 @@
 [project]
 name = "losebot"  # Required
 
-version = "0.0.2"  # Required
+version = "0.0.3"  # Required
 
 description = "download meal info from loseit.com"  # Optional
 
@@ -22,7 +22,7 @@ license = {file = "LICENSE.txt"}
 # For an analysis of this field vs pip's requirements files see:
 # https://packaging.python.org/discussions/install-requires-vs-requirements/
 dependencies = [ # Optional
-  'selenium', 'webdriver-setup'
+  'selenium>=4.43', 'webdriver-setup'
 ]
 
 # List additional groups of dependencies here (e.g. development
