@@ -29,6 +29,9 @@ LOSE_IT_CREATION_DATE = datetime.datetime.strptime("2008-01-01", '%Y-%m-%d')
 
 USER_AGENT= 'Mozilla/5.0 (Macintosh; Intel Mac OS X 12_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36'
 TMP_DOWNLOAD_FOLDER = "/tmp/loseit_downloads"
+BROWSER_CONTEXT_DIR = "/tmp/losebot_browser_context"
+MAIN_URL = "https://www.loseit.com/"
+LOGIN_URL = "https://my.loseit.com/login/?r=https%3A%2F%2Floseit.com"
 
 def main():
     start_date_from_properties = ""
@@ -43,9 +46,12 @@ def main():
         for f in files:
             os.remove(os.path.join(TMP_DOWNLOAD_FOLDER, f))
 
+    os.makedirs(BROWSER_CONTEXT_DIR, exist_ok=True)
+
     options = webdriver.ChromeOptions()
     options.add_argument("--headless=new")
-    options.add_argument(f'user-agent={USER_AGENT}')
+    options.add_argument(f'--user-agent={USER_AGENT}')
+    options.add_argument(f'--user-data-dir={BROWSER_CONTEXT_DIR}')
     prefs = {}
     prefs["profile.default_content_settings.popups"]=0
     prefs["download.default_directory"] = TMP_DOWNLOAD_FOLDER
@@ -79,14 +85,20 @@ password=mysecretpassword
 """)
             sys.exit(1)
 
-    if user == "" or password == "":
-        password, user = prompt_login()
+    browser.get(MAIN_URL)
+    if is_logged_in(browser):
+        print("Reusing existing browser session; already logged in.")
+    else:
+        if user == "" or password == "":
+            password, user = prompt_login()
 
-    login(browser, "https://my.loseit.com/login/?r=https%3A%2F%2Floseit.com", user, password)
+        login(browser, user, password)
 
-    if not is_logged_in(browser):
-        print("login unsuccessful")
-        sys.exit(1)
+        if not is_logged_in(browser):
+            print("login unsuccessful")
+            with open('/tmp/loseit_login_result.html', 'w+') as f:
+                f.write(browser.page_source)
+            sys.exit(1)
 
     # first case: check download dir to see what we have already, if any
     last_downloaded_timestamp = get_startdate_from_downloads()
@@ -131,9 +143,10 @@ def prompt_login():
     return password, user
 
 
-def login(browser, url, user, password):
+# assumes browser has already gotten a page with login prompt on it
+def login(browser, user, password):
     print("attempting to log in...")
-    browser.get(url)
+    browser.get(LOGIN_URL)
     email = browser.find_element(By.ID, "email")
     email.send_keys(user)
     passwd = browser.find_element(By.ID, "password")
@@ -216,13 +229,6 @@ def is_logged_in(browser):
     # a redirect to a page with a login means that you have NOT successfully logged in.
     # a page with a login has "Sign In" in text.
     result = "Log In" not in str(browser.page_source)
-    if not result:
-        with open('/tmp/loseit_login_result.html', 'w+') as f:
-            f.write(browser.page_source)
-    else:
-        with open('/tmp/post_login_result.html', 'w+') as f:
-            f.write(browser.page_source)
-
     return result
 
 
